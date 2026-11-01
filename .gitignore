@@ -1,0 +1,7 @@
+build/
+deps/
+rms/
+res/
+src/java/syobon/G.java
+dist/
+__pycache__/

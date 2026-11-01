@@ -1,0 +1,50 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install pillow
+      - name: Fetch dependencies
+        run: ./tools/fetch-deps.sh
+      - name: Build lite
+        run: |
+          LITE=1 ./build.sh
+          mkdir -p dist && cp build/OpenSyobonJ2ME-lite.jar build/OpenSyobonJ2ME-lite.jad dist/
+      - name: Build full
+        run: |
+          ./build.sh
+          cp build/OpenSyobonJ2ME.jar build/OpenSyobonJ2ME.jad dist/
+      - name: Smoke test
+        run: ./tools/smoke.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenSyobonJ2ME
+          path: |
+            dist/
+            build/smoke/*.png
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
