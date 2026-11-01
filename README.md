@@ -167,3 +167,13 @@ GitHub Actions builds all six jars on every push and attaches them to a release 
 - J2ME port: Jecka
 
 The game's music is taken from other games, as in the original release.
+
+## License
+
+The code in this repository (runtime, MIDP 1 and 2 canvases, build scripts and tools,
+English translation, hand-drawn sprites, touch pad) is © Jecka, licensed under the
+[GNU General Public License v3.0](LICENSE) or later.
+
+That license doesn't extend to Syobon Action itself or to the Open Syobon Action source
+and assets the build downloads (game code, graphics, sound, music). Those belong to
+their respective authors and come with no license of their own.
