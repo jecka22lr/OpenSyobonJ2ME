@@ -26,6 +26,9 @@ public class Harness {
                     Mobile.getPlatform().keyPressed(k); Thread.sleep(p.length > 2 ? Integer.parseInt(p[2]) : 80);
                     Mobile.getPlatform().keyReleased(k); break;
                 }
+                case "down": Mobile.getPlatform().pointerPressed(Integer.parseInt(p[1]), Integer.parseInt(p[2])); break;
+                case "drag": Mobile.getPlatform().pointerDragged(Integer.parseInt(p[1]), Integer.parseInt(p[2])); break;
+                case "up": Mobile.getPlatform().pointerReleased(Integer.parseInt(p[1]), Integer.parseInt(p[2])); break;
                 case "shot": ImageIO.write(Mobile.getPlatform().getLCD(), "png", new File(p[1])); break;
             }
         }

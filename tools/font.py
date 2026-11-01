@@ -6,6 +6,9 @@ ttf, out, size = sys.argv[1], sys.argv[2], int(sys.argv[3])
 chars = set(chr(c) for c in range(0x20, 0x7f))
 for f in sys.argv[4:]:
     src = open(f, encoding='utf-8').read()
+    if f.endswith('.txt'):          # translation tables: every character counts
+        chars.update(src.replace('\n', '').replace('\t', ''))
+        continue
     for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', src):
         chars.update(lit)
 chars.discard('\\')

@@ -6,6 +6,7 @@ Series 40 and similar phones, from 128x128 up to 240x320 and 320x240 screens.
 
 ![title](docs/title.png) ![1-1](docs/stage.png) ![hint](docs/hint.png) ![landscape](docs/landscape.png)
 ![208x208](docs/208.png) ![128x128](docs/128.png) ![128x128 hint](docs/128-hint.png)
+![touch, English](docs/touch-en.png) ![360x640 stretched](docs/stretch.png)
 
 ## Download
 
@@ -13,15 +14,22 @@ Grab the jar (and jad, if your phone wants one) from [Releases](../../releases):
 
 | Jar | Screens | View | Sound | Size |
 |---|---|---|---|---|
-| `OpenSyobonJ2ME.jar` | 240x320, 320x240, 240x240 | 240x210 | music + effects | ~790 KB |
-| `OpenSyobonJ2ME-lite.jar` | same | 240x210 | effects | ~220 KB |
-| `OpenSyobonJ2ME-208.jar` | 208x208, 176x208, 176x220 | 160x140 | effects | ~110 KB |
-| `OpenSyobonJ2ME-128.jar` | 128x128, 128x160 | 120x105 | effects | ~105 KB |
+| `OpenSyobonJ2ME.jar` | 240x320 and up (touch and stretch included) | 240x210 | music + effects | ~795 KB |
+| `OpenSyobonJ2ME-lite.jar` | same | 240x210 | effects | ~225 KB |
+| `OpenSyobonJ2ME-208.jar` | 208x208, 176x208, 176x220 | 160x140 | effects | ~112 KB |
+| `OpenSyobonJ2ME-128.jar` | 128x128, 128x160 | 120x105 | effects | ~110 KB |
 
 The 208 and 128 builds draw the game at a third and a quarter of the original size,
 use a 10px font, wrap the hint-box text to fit, and leave out the three long jingles
 (goal, 4-clear, all-clear) to stay near the 128 KB JAR limit of older Series 40 phones.
 All builds need MIDP 2.0 and CLDC 1.1.
+
+## Language
+
+The game comes in Japanese and English. It starts in Japanese if the phone's locale is
+Japanese and in English otherwise; switch under **Language** in the pause menu. The
+English text (hint blocks, death lines, credits) lives in `tools/en.txt`, one line per
+original string, so adding another language is a matter of copying that file.
 
 ## Controls
 
@@ -42,6 +50,22 @@ On the title screen, left/right picks the stage (1-1 to 3-1, plus `?`, the rando
 
 Most S40 keypads only register one key at a time, which is why 1/3/7/9 combine a
 direction with jump or down.
+
+### Touch
+
+On touchscreen phones the 240 builds put a pad under the picture: left/right, jump,
+jump-left/jump-right (so one finger can run and jump; Series 40 touch is single-touch),
+down and pause. Slide between buttons without lifting. On the title screen, tap the
+picture or JUMP to start. In the pause menu, tap a row to change it and tap outside the
+box to close. **Touch pad** in the menu turns it on or off; Auto shows it whenever the
+phone reports a touchscreen. The pad only appears in portrait/Auto.
+
+### Stretch
+
+**Stretch** scales the picture up to fill bigger screens (nearest-neighbour, aspect
+kept), in portrait or either landscape mode. Auto stretches only when the picture would
+grow by at least 1.4x, Off never does, On always fills the screen. Stretching redraws the
+whole picture by hand every frame, so turn it off if a phone feels slow with it.
 
 ### Portrait or landscape
 
@@ -77,6 +101,7 @@ music) or **effects first** (no music, every sound effect).
 - Hint-block message boxes span the full width so the text fits, and stay up while
   the game waits for a key (the SDL port showed an empty box there).
 - Number-key stage select is replaced by left/right on the title screen.
+- English translation, touch pad and stretching are new.
 
 ## Building
 

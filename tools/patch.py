@@ -17,7 +17,9 @@ rep('''	DrawFormatString(230, 200, GetColor(255, 255, 255), " × %d",
 rep('''	str("TODO: Fix this encoding error...",240-6*20/2,xx[14]/100);\n''', '')
 # title screen: phone keys
 rep('''	str("Enterキーを押せ!!", 240 - 8 * 20 / 2, 250);''',
-    '''	str("5キーを押せ!!", 240 - 7 * 20 / 2, titleY(0));
+    '''	if (lang == EN) str("Syobon Action", 240 - 13 * 10 / 2, 60 + 60);
+	if (touchUi) str("ジャンプをタッチ!!", 240 - 9 * 20 / 2, titleY(0));
+	else str("5キーを押せ!!", 240 - 7 * 20 / 2, titleY(0));
 	str(titleStageName(), 240 - 8 * 20 / 2, titleY(1));
 	str("←→ ステージ選択", 240 - 8 * 20 / 2, titleY(2));''')
 rep('''	if (key(KEY_INPUT_RETURN)) {
@@ -72,7 +74,7 @@ static final String[] TITLE_ST = { "1-1", "1-2", "1-3", "1-4", "2-1", "2-2", "2-
 
 static String titleStageName() {
     if (titleSel == 9) return "ステージ ？？？";
-    return new StringBuffer("ステージ ").append(TITLE_ST[titleSel]).toString();
+    return new StringBuffer(tr("ステージ ")).append(TITLE_ST[titleSel]).toString();
 }
 
 // replaces the PC number-key stage select: left/right cycles, 5 starts

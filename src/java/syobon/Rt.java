@@ -2,6 +2,7 @@ package syobon;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
+import java.util.Hashtable;
 import java.util.Random;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -39,6 +40,7 @@ class Rt {
     static final boolean TRUE = true;
 
     // game-level input state, filled by Cv each frame
+    static boolean touchUi; // touch pad on screen: title says "tap" instead of "press 5"
     static boolean kLeft, kRight, kUp, kDown, kJump, kStart, kSuicide, kTitle, kFast;
     static boolean waitKeyPending;
     static int frameMs = 33;
@@ -194,6 +196,30 @@ class Rt {
                 sc(a) - (m.hw >> 1), sc(b) - (m.hh >> 1), Graphics.TOP | Graphics.LEFT);
     }
 
+    // ---- language ----
+    static final int JA = 0, EN = 1;
+    static int lang = JA;
+    private static Hashtable en;
+
+    static void loadLang() {
+        en = new Hashtable();
+        try {
+            DataInputStream in = new DataInputStream(res("/en.bin"));
+            int n = in.readUnsignedShort();
+            for (int i = 0; i < n; i++) {
+                String k = in.readUTF();
+                en.put(k, in.readUTF());
+            }
+            in.close();
+        } catch (Exception e) { }
+    }
+
+    static String tr(String s) {
+        if (lang != EN || en == null || s == null) return s;
+        Object o = en.get(s);
+        return o != null ? (String) o : s;
+    }
+
     // ---- text ----
     static void ChangeFontType(int t) { fontType = t; }
     static void setfont(int a, int b) { }
@@ -212,10 +238,15 @@ class Rt {
 
     static void str(String s, int a, int b) {
         if (skipDraw || s == null || s.length() == 0) return;
+        String orig = s;
+        s = tr(s);
         // The original centres most text by hand assuming 20px glyphs on a
         // 480px screen; recognise that and re-centre for our font.
         int ow = 0;
-        for (int i = 0; i < s.length(); i++) ow += s.charAt(i) < 0x100 || (s.charAt(i) >= 0xFF61 && s.charAt(i) <= 0xFF9F) ? 10 : 20;
+        for (int i = 0; i < orig.length(); i++) {
+            char c = orig.charAt(i);
+            ow += c < 0x100 || (c >= 0xFF61 && c <= 0xFF9F) ? 10 : 20;
+        }
         int x = sc(a);
         int cx = a + ow / 2 - 240;
         if (!noCentre && cx > -24 && cx < 24 && ow > 40) x = (VW - Font.width(s)) >> 1;
@@ -264,7 +295,8 @@ class Rt {
 
     static void txmsg(String x, int a) {
         if (skipDraw) return;
-        if (!SMALL) {
+        x = tr(x);
+        if (!compactMsg()) {
             Font.draw(g, x, 7, 22 + a * 12, color);
             return;
         }
@@ -273,11 +305,16 @@ class Rt {
 
     // Small screens: drop the space padding, wrap long lines, and keep the
     // right-aligned signatures ("ちく より") on the right.
+    static boolean compactMsg() {
+        return SMALL || lang == EN;
+    }
+
     static void msgFlush() {
-        if (!SMALL || skipDraw) { msgN = 0; return; }
+        if (!compactMsg() || skipDraw) { msgN = 0; return; }
         int lh = Font.height() + 1;
-        int maxW = VW - 8;
-        int y = 4;
+        int maxW = VW - (SMALL ? 8 : 16);
+        int y = SMALL ? 4 : 24;
+        int left = SMALL ? 4 : 8;
         for (int i = 0; i < msgN; i++) {
             String s = msgLines[i];
             int lead = 0;
@@ -290,11 +327,16 @@ class Rt {
             while (s.length() > 0) {
                 int n = s.length();
                 while (n > 1 && Font.width(s.substring(0, n)) > maxW) n--;
+                if (n < s.length()) { // prefer breaking at a space (English)
+                    int sp = s.lastIndexOf(' ', n);
+                    if (sp > 0) n = sp;
+                }
                 String part = s.substring(0, n);
-                int x = right ? VW - 4 - Font.width(part) : 4;
+                int x = right ? VW - left - Font.width(part) : left;
                 Font.draw(g, part, x, y, color);
                 y += lh;
                 s = s.substring(n);
+                while (s.length() > 0 && s.charAt(0) == ' ') s = s.substring(1);
             }
         }
         msgN = 0;

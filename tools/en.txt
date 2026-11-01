@@ -1,0 +1,97 @@
+# English text for OpenSyobonJ2ME.
+# Format: original Japanese <TAB> English. Leading/trailing spaces on the
+# Japanese side are ignored here; tools/lang.py matches every padded variant
+# found in the game and copies its leading padding, which keeps right-aligned
+# lines (like the "- Chiku" signatures) on the right.
+ゲームクリアー	GAME CLEAR
+プレイしてくれてありがとー	Thanks for playing~
+お、おいしい!!	D-delicious!!
+毒は無いが……	It's not poisonous, but...
+刺さった!!	It stabbed me!!
+食べるべきではなかった!!	Shouldn't have eaten that!!
+俺は燃える男だ!!	I'm a man on fire!!
+体が……焼ける……	My body... is burning...
+たーまやー!!	Tamaya~!!
+見事にオワタ	Gloriously done for
+足が、足がぁ!!	My legs, my legs!!
+流石は摂氏800度!!	800°C, as expected!!
+溶岩と合体したい……	I want to become one with the lava...
+ヤッフー!!	Yahoo!!
+え?俺勝っちゃったの?	Huh? Did I just win?
+貴様の死に場所はここだ!	This is where you die!
+二度と会う事もないだろう	We shall never meet again
+俺、最強!!	I'm the strongest!!
+一昨日来やがれ!!	Come back the day before yesterday!!
+漢に後退の二文字は無い!!	A real man never retreats!!
+ハッハァ!!	Hah-HAH!!
+身の程知らずが……	Know your place...
+油断が死を招く	Carelessness invites death
+おめでたい奴だ	What a gullible fool
+屑が!!	Scum!!
+無謀な……	How reckless...
+僕は……負けない!!	I... won't lose!!
+貴様に見切れる筋は無い	You'll never read my moves
+今死ね、すぐ死ね、骨まで砕けろ!!	Die now, die fast, crumble to the bone!!
+任務完了!!	Mission complete!!
+鉄壁!!よって、無敵!!	Ironclad!! Therefore, invincible!!
+丸腰で勝てるとでも?	Think you can win unarmed?
+パリイ!!	Parry!!
+自業自得だ	You had it coming
+ク、クマー	B-bear!
+うめぇ!!	Yummy!!
+ブロックを侮ったな?	Underestimated the block, did you?
+シャキーン	*shing*
+波動砲!!	Wave Motion Cannon!!
+裏切られたとでも思ったか?	Did you think you'd been betrayed?
+ポールアターック!!	Pole attaaack!!
+制作・プレイに関わった方々	Made and played by
+ステージ１　プレイ	Stage 1 playtest
+ステージ２　プレイ	Stage 2 playtest
+ステージ３　プレイ	Stage 3 playtest
+ステージ４　プレイ	Stage 4 playtest
+友人　willowlet	Friend: willowlet
+友人２　ann	Friend 2: ann
+ご協力	Help
+Ｔ先輩	Senpai T
+Ｓ先輩	Senpai S
+動画技術提供	Video know-how
+Ｋ先輩	Senpai K
+動画キャプチャ・編集・エンコード	Video capture, editing, encoding
+プログラム・描画・ネタ・動画編集	Code, art, gags, video editing
+ちく	Chiku
+プレイしていただき　ありがとうございました〜	Thank you so much for playing~
+5キーを押せ!!	Press 5!!
+ジャンプをタッチ!!	Tap JUMP!!
+←→ ステージ選択	←→ Choose stage
+テスト　hoge	Test hoge
+ステージ 1 より	From stage 1 on,
+特殊的なものが増えたので	there are more special tricks,
+気をつけてくれよ〜	so watch your step~
+後、アイテムの一部を利用するかも…	Also, some items might get used...
+ちく より	- Chiku
+？が必要です	You need a ?
+別にコインに意味ないけどね	Not that coins mean anything, though
+この先に隠しブロックがあります	There is a hidden block ahead
+注意してください !!	Be careful!!
+前回よりも難易度を下げましたので	I made it easier than last time,
+気楽にプレイしてください	so relax and enjoy it
+そこにいる敵のそばによると、	Get close to that enemy there
+自分と一緒にジャンプしてくれます。	and it will jump along with you.
+可愛いですね。	Cute, isn't it?
+あの敵は連れて来れましたか?、	Did you manage to bring that enemy?
+連れて来れなかった貴方は、	If you didn't,
+そこの落とし穴から Let's dive!	let's dive into that pit!
+そんな容易に	Don't go leaning on hints
+ヒントに頼るもんじゃないぜ	that easily, pal
+ほら、さっさと次行きな!!	Now hurry up and move on!!
+正真正銘のファイナルステージ。	The one and only final stage.
+クリアすれば遂にエンディング!!	Clear it and the ending is yours!!
+その土管から戻ってもいいんだぜ?	You can always go back down that pipe?
+床が凍ってるから、すっごい滑るよ。	The floor is frozen, so it's super slippery.
+え？私ですか？	Huh? Me?
+いやぁ、ただの通りすがりの	Oh, I'm just a passing
+ヒントブロックですよ〜	hint block~
+決して怪しいブロックじゃないですよ	Definitely not a suspicious block
+(…チッ)	(...tch)
+ステージ ？？？	Stage ???
+ステージ 	Stage

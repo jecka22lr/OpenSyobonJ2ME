@@ -34,7 +34,7 @@ python3 tools/patch.py src/java/syobon/G.java
 # 2. compile (Java 8 bytecode, no StringBuilder/boxing allowed)
 rm -rf build/cls build/rec && mkdir -p build/cls build/rec
 javac -nowarn -encoding UTF-8 -source 8 -target 8 -cp $FJ -d build/cls src/java/syobon/*.java 2>&1 | grep -v "^warning\|^Note\|^[0-9]* warning" || true
-if javap -c -p -cp build/cls $(cd build/cls && ls syobon/*.class | sed 's/\.class//;s#/#.#') | grep -q "StringBuilder\|Integer.valueOf\|java/util/[A-QS-Z]\|ldc.*class "; then
+if javap -c -p -cp build/cls $(cd build/cls && ls syobon/*.class | sed 's/\.class//;s#/#.#') | grep -q "StringBuilder\|Integer.valueOf\|java/util/\(Array\|Collection\|List\|Map\|HashMap\|Iterator\|Objects\|Set\)\|ldc.*class "; then
   echo "non-CLDC API used"; exit 1
 fi
 
@@ -45,7 +45,8 @@ mkdir -p res/g
 python3 tools/sprites.py $S/res res/g build/rects.txt $SCALE
 
 # 4. font
-python3 tools/font.py $S/res/sazanami-gothic.ttf res/f.bin $FONT src/java/syobon/*.java
+python3 tools/font.py $S/res/sazanami-gothic.ttf res/f.bin $FONT src/java/syobon/*.java tools/en.txt
+python3 tools/lang.py tools/en.txt src/java/syobon/G.java res/en.bin
 
 # 5. audio: 8 kHz 8-bit mono WAV, plain 44-byte headers
 mkdir -p res/a
@@ -79,7 +80,7 @@ EOF
 
 # 7. jar, shrink + preverify
 rm -rf build/jar && mkdir -p build/jar && cp -r build/cls/* build/jar/
-cp -r res/g res/st res/a res/f.bin res/icon.png build/jar/
+cp -r res/g res/st res/a res/f.bin res/en.bin res/icon.png build/jar/
 cat > build/MANIFEST.MF <<EOF
 MIDlet-1: OpenSyobonJ2ME, /icon.png, syobon.Main
 MIDlet-Name: OpenSyobonJ2ME
