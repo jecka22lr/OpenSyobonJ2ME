@@ -35,6 +35,11 @@ jobs:
           SCALE=3 ./build.sh
           SCALE=4 ./build.sh
           cp build/OpenSyobonJ2ME-208.ja? build/OpenSyobonJ2ME-128.ja? dist/
+      - name: Build MIDP 1.0
+        run: |
+          MIDP=1 SCALE=4 ./build.sh
+          MIDP=1 SCALE=3 ./build.sh
+          cp build/OpenSyobonJ2ME-midp1-*.ja? dist/
       - name: Build full
         run: |
           ./build.sh

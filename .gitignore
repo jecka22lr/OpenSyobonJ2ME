@@ -6,3 +6,4 @@ src/java/syobon/G.java
 dist/
 __pycache__/
 src/java/syobon/Cfg.java
+src/java/syobon/Tab.java

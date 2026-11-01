@@ -140,6 +140,8 @@ class Rt {
 
     // ---- images ----
     static Image[] sheets = new Image[10];
+    // MIDP 1.0 has no drawRegion/transforms: pre-flipped copies of the sheets
+    static Image[] sheetsM = new Image[10], sheetsV = new Image[10];
     static String[] sheetNames = { "player", "brock", "item", "teki", "haikei", "brock2", "omake", "omake2", "syobon3" };
     static boolean recordOnly; // build-time: record sprite rects without loading images
 
@@ -156,10 +158,18 @@ class Rt {
             }
             im.hw = sheets[id].getWidth();
             im.hh = sheets[id].getHeight();
+            if (Cfg.MIDP1) { // flipped copies exist for all but the background and logo; upside-down only for enemies
+                if (id != 4 && id != 8) sheetsM[id] = optImage(new StringBuffer("/g/").append(name).append("_m.png").toString());
+                if (id == 3) sheetsV[id] = optImage("/g/teki_v.png");
+            }
         }
         im.w = SHEET_W[id];
         im.h = SHEET_H[id];
         return im;
+    }
+
+    private static Image optImage(String path) {
+        try { return Image.createImage(path); } catch (Exception e) { return null; }
     }
 
     static final int[] SHEET_W = { 169, 302, 268, 263, 298, 234, 265, 304, 378 };
@@ -184,6 +194,16 @@ class Rt {
 
     static void drawimage(Img m, int a, int b) {
         if (skipDraw || m == null) return;
+        if (Cfg.MIDP1) {
+            Image src = sheets[m.sheet];
+            int sx = m.hx;
+            if (mirror == 1 && sheetsM[m.sheet] != null) {
+                src = sheetsM[m.sheet];
+                sx = src.getWidth() - m.hx - m.hw;
+            }
+            blit(src, sx, m.hy, m.hw, m.hh, sc(a), sc(b));
+            return;
+        }
         g.drawRegion(sheets[m.sheet], m.hx, m.hy, m.hw, m.hh,
                 mirror == 1 ? Sprite.TRANS_MIRROR : Sprite.TRANS_NONE,
                 sc(a), sc(b), Graphics.TOP | Graphics.LEFT);
@@ -192,8 +212,40 @@ class Rt {
     // upside-down draw centred on (a,b)
     static void DrawVertTurnGraph(int a, int b, Img m) {
         if (skipDraw || m == null) return;
+        int dx = sc(a) - (m.hw >> 1), dy = sc(b) - (m.hh >> 1);
+        if (Cfg.MIDP1) {
+            Image src = sheetsV[m.sheet];
+            if (src == null) { blit(sheets[m.sheet], m.hx, m.hy, m.hw, m.hh, dx, dy); return; }
+            blit(src, m.hx, src.getHeight() - m.hy - m.hh, m.hw, m.hh, dx, dy);
+            return;
+        }
         g.drawRegion(sheets[m.sheet], m.hx, m.hy, m.hw, m.hh, Sprite.TRANS_MIRROR_ROT180,
-                sc(a) - (m.hw >> 1), sc(b) - (m.hh >> 1), Graphics.TOP | Graphics.LEFT);
+                dx, dy, Graphics.TOP | Graphics.LEFT);
+    }
+
+    // MIDP 1.0 sprite draw: clip to the sprite, draw the whole sheet offset.
+    // Rt.g is the offscreen view buffer here, so the normal clip is the view.
+    private static void blit(Image img, int sx, int sy, int w, int h, int dx, int dy) {
+        int x0 = dx < 0 ? 0 : dx, y0 = dy < 0 ? 0 : dy;
+        int x1 = dx + w > VW ? VW : dx + w, y1 = dy + h > VH ? VH : dy + h;
+        if (x1 <= x0 || y1 <= y0) return;
+        g.setClip(x0, y0, x1 - x0, y1 - y0);
+        g.drawImage(img, dx - sx, dy - sy, Graphics.TOP | Graphics.LEFT);
+        g.setClip(0, 0, VW, VH);
+    }
+
+    // integer sin/cos for CLDC 1.0: m * cos(a/2 degrees), truncated like (int)
+    static int fcos(int m, int a) { return m * cosHalfDeg(a) / 16384; }
+    static int fsin(int m, int a) { return m * cosHalfDeg(a - 180) / 16384; }
+
+    private static int cosHalfDeg(int a) {
+        a %= 720;
+        if (a < 0) a += 720;
+        // Tab.COS holds cos for 0..90 degrees in half-degree steps, scaled by 16384
+        if (a <= 180) return Tab.COS.charAt(a);
+        if (a <= 360) return -Tab.COS.charAt(360 - a);
+        if (a <= 540) return -Tab.COS.charAt(a - 360);
+        return Tab.COS.charAt(720 - a);
     }
 
     // ---- language ----
@@ -343,11 +395,14 @@ class Rt {
     }
 
     // ---- sound ----
-    static void ot(int n) { Snd.se(n); }
-    static void bgmchange(int n) { Snd.bgm(n); }
-    static void stopBgm() { Snd.haltBgm(); }
-    static void stopAllSe() { Snd.stopSe(); }
-    static void StopSoundMem(int n) { Snd.stopSe(n); }
+    // Snd needs MMAPI; builds without sound never reference it, and MIDP 1.0
+    // builds only touch it once Snd.init found MMAPI on the phone
+    static boolean sndOk;
+    static void ot(int n) { if (Cfg.SOUND) { if (sndOk) Snd.se(n); } }
+    static void bgmchange(int n) { if (Cfg.SOUND) { if (sndOk) Snd.bgm(n); } }
+    static void stopBgm() { if (Cfg.SOUND) { if (sndOk) Snd.haltBgm(); } }
+    static void stopAllSe() { if (Cfg.SOUND) { if (sndOk) Snd.stopSe(); } }
+    static void StopSoundMem(int n) { if (Cfg.SOUND) { if (sndOk) Snd.stopSe(n); } }
 
     // Class literals (X.class) are not valid in pre-1.5 class files, so look
     // resources up through the MIDlet instance's class.
@@ -359,8 +414,14 @@ class Rt {
     static byte[][] loadStage(int n) {
         byte[][] d = new byte[17][1001];
         try {
-            InputStream in = res(new StringBuffer("/st/s").append(n).append(".bin").toString());
-            DataInputStream din = new DataInputStream(in);
+            // all stages live in one file (fewer jar entries, better compression)
+            DataInputStream din = new DataInputStream(res("/st.bin"));
+            int skip = n * 17 * 1001;
+            while (skip > 0) {
+                int k = (int) din.skip(skip);
+                if (k <= 0) { din.readByte(); k = 1; }
+                skip -= k;
+            }
             for (int r = 0; r < 17; r++) din.readFully(d[r]);
             din.close();
         } catch (Exception e) {

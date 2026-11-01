@@ -67,6 +67,11 @@ while depth:
     elif s[i] == '}': depth -= 1
     i += 1
 s = s[:i - 1] + '    msgFlush();\n' + s[i - 1:]
+# no floating point (CLDC 1.0): the rotating fire bars use integer trig
+s = re.sub(r'(-?tt \* xx\[26\]) \* Math\.(cos|sin)\(atm\[t\] \* pai / 180 / 2\)', r'f\2(\1, atm[t])', s)
+rep('static double pai = 3.1415926535;\n', '')
+rep('static double[] xd = new double[11];', 'static int[] xd = new int[11];')
+if 'Math.sin' in s or 'Math.cos' in s or 'double' in s: raise SystemExit('floating point left in G.java')
 extra = '''
 static int titleNewBits;
 static int titleSel;

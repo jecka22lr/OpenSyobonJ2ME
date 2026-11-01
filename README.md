@@ -1,8 +1,9 @@
 # OpenSyobonJ2ME
 
-Syobon Action (しょぼんのアクション, Cat Mario) for Java ME phones: a MIDP 2.0 / CLDC 1.1
-port of [Open Syobon Action](https://github.com/angelXwind/OpenSyobonAction) for Nokia
-Series 40 and similar phones, from 128x128 up to 240x320 and 320x240 screens.
+Syobon Action (しょぼんのアクション, Cat Mario) for Java ME phones: a port of
+[Open Syobon Action](https://github.com/angelXwind/OpenSyobonAction) that runs on
+anything from 2002-era MIDP 1.0 phones with 64 KB jar limits up to MIDP 2.0
+touchscreens, on screens from 128x128 to 360x640.
 
 ![title](docs/title.png) ![1-1](docs/stage.png) ![hint](docs/hint.png) ![landscape](docs/landscape.png)
 ![208x208](docs/208.png) ![128x128](docs/128.png) ![128x128 hint](docs/128-hint.png)
@@ -18,11 +19,26 @@ Grab the jar (and jad, if your phone wants one) from [Releases](../../releases):
 | `OpenSyobonJ2ME-lite.jar` | same | 240x210 | effects | ~225 KB |
 | `OpenSyobonJ2ME-208.jar` | 208x208, 176x208, 176x220 | 160x140 | effects | ~112 KB |
 | `OpenSyobonJ2ME-128.jar` | 128x128, 128x160 | 120x105 | effects | ~110 KB |
+| `OpenSyobonJ2ME-midp1-176.jar` | MIDP 1.0, 176x208 and up | 160x140 | effects if the phone has MMAPI | ~225 KB |
+| `OpenSyobonJ2ME-midp1-128.jar` | MIDP 1.0, 128x128 and up | 120x105 | none | ~58 KB |
 
-The 208 and 128 builds draw the game at a third and a quarter of the original size,
-use a 10px font, wrap the hint-box text to fit, and leave out the three long jingles
-(goal, 4-clear, all-clear) to stay near the 128 KB JAR limit of older Series 40 phones.
-All builds need MIDP 2.0 and CLDC 1.1.
+Which one: MIDP 2.0 phones (most phones from 2004 on) take the first four, picked by
+screen size. The 208 and 128 builds draw the game at a third and a quarter of the
+original size, use a 10px font, wrap the hint-box text to fit, and leave out the three
+long jingles (goal, 4-clear, all-clear) to stay near the 128 KB JAR limit of older
+Series 40 phones.
+
+The `midp1` builds are for phones that only have MIDP 1.0 and CLDC 1.0: Series 40 1st
+edition Nokias (3100, 6610, 7210, 7250...), early S60 (7650, 3650, N-Gage), and older
+Sony Ericsson, Siemens and Motorola phones. `midp1-128` stays under the 64 KB jar
+limit of the early Series 40 phones, so it is silent. `midp1-176` is for roomier
+phones such as early S60, and plays the sound effects when the phone has MMAPI. On
+Nokias they use the Nokia UI API's full-screen canvas; on other phones the pause menu
+sits behind a **Menu** soft key. They have no rotation, stretch or touch pad (MIDP 1.0
+lacks the calls behind them), and they skip up to three pictures in four on slow
+phones so the game itself keeps full speed. MIDP 1.0 doesn't require phones to support
+PNG transparency; nearly all do, but if sprites show coloured boxes around them, that's
+why.
 
 ## Language
 
@@ -112,6 +128,8 @@ Needs a JDK (21 works), Python 3 with Pillow, ffmpeg, git and curl.
 LITE=1 ./build.sh     # build/OpenSyobonJ2ME-lite.jar + .jad
 SCALE=3 ./build.sh    # build/OpenSyobonJ2ME-208.jar + .jad
 SCALE=4 ./build.sh    # build/OpenSyobonJ2ME-128.jar + .jad
+MIDP=1 SCALE=4 ./build.sh   # build/OpenSyobonJ2ME-midp1-128.jar + .jad
+MIDP=1 SCALE=3 ./build.sh   # build/OpenSyobonJ2ME-midp1-176.jar + .jad (MUSIC=1 adds music)
 ./tools/smoke.sh [jar]  # boots a jar headless in FreeJ2ME, screenshots in build/smoke/
 ```
 
@@ -126,15 +144,19 @@ What the build does:
 2. `tools/convert.py` translates the C++ game logic into `G.java`, and `tools/patch.py`
    applies the hand fixes on top.
 3. `javac -source 8 -target 8`, refusing any non-CLDC API (StringBuilder, boxing, class
-   literals), then ProGuard with `-microedition -target 1.4` shrinks and preverifies.
+   literals), then ProGuard with `-microedition` shrinks and preverifies (class files
+   for Java 1.4, or 1.1 for MIDP 1.0). The shipped classes are checked again: MIDP 1.0
+   builds fail if anything uses MIDP 2.0 calls or floating point. The game's fire bars
+   use an integer sine table instead of `Math.sin`, so no build needs floats.
 4. `tools/sprites.py`, `tools/font.py` and ffmpeg generate the sprites, font and WAVs
    for the chosen scale; `build.sh` writes the scale into a generated `Cfg.java`.
 
-The runtime is in `src/java/syobon/`: `Rt` stands in for DxLib/SDL, `Cv` is the canvas
-(main loop, keys, rotation, pause menu), `Snd` handles MMAPI audio and `Font` draws the
-bitmap font.
+Shared runtime in `src/java/syobon/`: `Rt` stands in for DxLib/SDL, `Snd` handles
+MMAPI audio and `Font` draws the bitmap font. `src/midp2/` holds the MIDP 2.0 canvas
+(`Cv`: main loop, keys, touch pad, rotation, stretch, pause menu) and `src/midp1/` the
+MIDP 1.0 one (`Eng` plus a plain and a Nokia full-screen canvas).
 
-GitHub Actions builds all four jars on every push and attaches them to a release when a
+GitHub Actions builds all six jars on every push and attaches them to a release when a
 `v*` tag is pushed.
 
 ## Credits

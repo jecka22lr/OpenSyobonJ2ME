@@ -357,6 +357,8 @@ final class Cv extends GameCanvas implements Runnable {
             Rt.loadLang();
             G.loadg();
             Snd.init();
+            Rt.sndOk = true;
+            dropMixIfNoMusic();
         } catch (Throwable t) {
             sg.setColor(0);
             sg.fillRect(0, 0, getWidth(), getHeight());
@@ -504,9 +506,18 @@ final class Cv extends GameCanvas implements Runnable {
     private static final int M_RESUME = 0, M_SCREEN = 1, M_STRETCH = 2, M_TOUCH = 3, M_LANG = 4,
             M_SOUND = 5, M_MIX = 6, M_TITLE = 7, M_EXIT = 8;
     // the 128/208 builds leave out stretch and touch so the menu fits
-    private static final int[] MENU = Rt.SMALL
+    // (the music/effects preference only matters when there is music)
+    private static int[] MENU = Rt.SMALL
             ? new int[] { M_RESUME, M_SCREEN, M_LANG, M_SOUND, M_MIX, M_TITLE, M_EXIT }
             : new int[] { M_RESUME, M_SCREEN, M_STRETCH, M_TOUCH, M_LANG, M_SOUND, M_MIX, M_TITLE, M_EXIT };
+
+    private static void dropMixIfNoMusic() {
+        if (Snd.hasBgm) return;
+        int[] m = new int[MENU.length - 1];
+        int j = 0;
+        for (int i = 0; i < MENU.length; i++) if (MENU[i] != M_MIX) m[j++] = MENU[i];
+        MENU = m;
+    }
 
     private static final String[] ORIENT_NAMES = Rt.SMALL
             ? new String[] { "Auto", "Portrait", "Land. keys R", "Land. keys L" }
