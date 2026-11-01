@@ -30,12 +30,17 @@ jobs:
         run: |
           LITE=1 ./build.sh
           mkdir -p dist && cp build/OpenSyobonJ2ME-lite.jar build/OpenSyobonJ2ME-lite.jad dist/
+      - name: Build small screens
+        run: |
+          SCALE=3 ./build.sh
+          SCALE=4 ./build.sh
+          cp build/OpenSyobonJ2ME-208.ja? build/OpenSyobonJ2ME-128.ja? dist/
       - name: Build full
         run: |
           ./build.sh
           cp build/OpenSyobonJ2ME.jar build/OpenSyobonJ2ME.jad dist/
       - name: Smoke test
-        run: ./tools/smoke.sh
+        run: for j in dist/*.jar; do ./tools/smoke.sh $j; done
       - uses: actions/upload-artifact@v4
         with:
           name: OpenSyobonJ2ME

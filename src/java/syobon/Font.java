@@ -4,18 +4,22 @@ import java.io.DataInputStream;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * 12px bitmap font (Sazanami Gothic glyphs, pre-rendered at build time) drawn
+ * 10/12px bitmap font (Sazanami Gothic glyphs, pre-rendered at build time) drawn
  * as horizontal pixel runs, so any colour costs no extra memory.
- * File layout: n, char[n], width[n], spanStart[n+1], spans (y,x,len bytes).
+ * File layout: size, n, char[n], width[n], spanStart[n+1], spans (y,x,len bytes).
  */
 final class Font {
     private static char[] chars;
     private static byte[] widths;
     private static int[] start;
     private static byte[] spans;
+    private static int size = 12;
+
+    static int height() { return size; }
 
     static void load() throws Exception {
         DataInputStream in = new DataInputStream(Rt.res("/f.bin"));
+        size = in.readUnsignedByte();
         int n = in.readUnsignedShort();
         chars = new char[n];
         widths = new byte[n];
@@ -42,8 +46,8 @@ final class Font {
 
     private static int adv(char c, int idx) {
         if (idx >= 0) return widths[idx];
-        if (c < 0x100 || (c >= 0xFF61 && c <= 0xFF9F)) return 6;
-        return 12;
+        if (c < 0x100 || (c >= 0xFF61 && c <= 0xFF9F)) return size / 2;
+        return size;
     }
 
     static int width(String s) {

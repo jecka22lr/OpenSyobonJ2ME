@@ -1,78 +1,115 @@
-# Build half-scale sprite sheets. Every sprite rect used by loadg() is
-# reduced on its own, aligned the same way Rt.DerivationGraph addresses it.
-# Reduction keeps 1px dark outlines (darkest pixel in a 2x2 block wins when
-# it is outline-dark), otherwise the most common opaque colour.
+# Build the reduced sprite sheets for one scale (K = 2, 3 or 4).
+# Every sprite rect used by loadg() is reduced on its own, addressed exactly
+# the way Rt.DerivationGraph does (floor(x/K) .. ceil((x+w)/K)), so sprites
+# never bleed into each other. The reduction rule lives in reduce.py; on top
+# of it the most visible sprites are hand-drawn for the smaller scales.
+#   usage: sprites.py <orig res dir> <out dir> <rects.txt> <K>
 import sys, collections
 sys.path.insert(0, sys.path[0])
-from reduce import reduce_rect
+from reduce import reduce_rect, KEY
 from PIL import Image
-SRC = sys.argv[1]; OUT = sys.argv[2]; RECTS = sys.argv[3]
+SRC, OUT, RECTS = sys.argv[1], sys.argv[2], sys.argv[3]
+K = int(sys.argv[4]) if len(sys.argv) > 4 else 2
 names = ["player", "brock", "item", "teki", "haikei", "brock2", "omake", "omake2", "syobon3"]
-KEY = (153, 255, 255)
-# hand-drawn half-size cat head for the player frames
-CAT_HEAD = [
-    "....#.....#....",
-    "...#o#...#o#...",
-    "...#oo###oo#...",
-    "..#ooooooooo#..",
-    "..#oo#ooo#oo#..",
-    "..#oo#ooo#oo#..",
-    "..#ooooooooo#..",
-    "..#ooo#o#ooo#..",
-    "..#oooo#oooo#..",
-]
+
+def fl(x): return x // K
+def cl(x): return -((-x) // K)
+
+# ---- hand-drawn pieces ----
+# '.' transparent, '#' black, 'o' white, 'M' the block's main colour,
+# 'Y' question-block yellow
+CAT_HEAD = {
+    2: ["....#.....#....",
+        "...#o#...#o#...",
+        "...#oo###oo#...",
+        "..#ooooooooo#..",
+        "..#oo#ooo#oo#..",
+        "..#oo#ooo#oo#..",
+        "..#ooooooooo#..",
+        "..#ooo#o#ooo#..",
+        "..#oooo#oooo#.."],
+    3: ["..#.....#.",
+        ".#o#...#o#",
+        ".#oo###oo#",
+        "#oooooooo#",
+        "#oo#oo#oo#",
+        "#oooooooo#",
+        "#ooo##ooo#"],
+}
+# whole 8x9 player frames for K=4, keyed by source x of the frame
+CAT4 = {
+    124: [".#....#.", "#o#..#o#", "#oo##oo#", "#o#oo#o#", "#oooooo#", ".#oooo#.", ".#oooo#.", ".#o##o#.", ".##..##."],
+    62:  [".#....#.", "#o#..#o#", "#oo##oo#", "#o#oo#o#", "#oooooo#", ".#oooo#.", ".#oooo#.", "#o#..#o#", "##....##"],
+    93:  [".#....#.", "#o#..#o#", "#oo##oo#", "#o#oo#o#", "#oooooo#", ".#oooo#.", ".#oooo#.", "..#oo#..", "..####.."],
+    31:  [".#....#.", "#o#..#o#", "#oo##oo#", "#o#oo#o#", "#oooooo#", "#oooooo#", ".#oooo#.", "#o#..#o#", "##....##"],
+    0:   [".#....#.", "#o#..#o#", "#oo##oo#", "#o#oo#o#", "#oooooo#", ".#o##o#.", ".#oooo#.", ".#o##o#.", ".##..##."],
+}
+TILE4 = {  # brock.PNG column -> 8x8 pattern
+    1: ["########", "MMM#MMMM", "MMM#MMMM", "########", "M#MMMM#M", "M#MMMM#M", "########", "MMM#MMMM"],
+    2: ["########", "#YYYYYY#", "#YY##YY#", "#YYYY#Y#", "#YYY#YY#", "#YYYYYY#", "#YYY#YY#", "########"],
+    3: ["########", "#MMMMMM#", "#MMMMMM#", "#MMMMMM#", "#MMMMMM#", "#MMMMMM#", "#MMMMMM#", "########"],
+    4: ["########", "#MMMMMM#", "#M####M#", "#M#MM#M#", "#M#MM#M#", "#M####M#", "#MMMMMM#", "########"],
+    5: ["########", "#MMMM#M#", "#MMMM#M#", "#MMM#MM#", "####MMM#", "#MMM#MM#", "#MMM#MM#", "########"],
+    6: ["########", "#MM#MMM#", "#MM#####", "#MM#MMM#", "#MM#MMM#", "#MM#####", "#MM#MMM#", "########"],
+}
+BLOB4 = ["..####..", ".#oooo#.", "#o#oo#o#", "#oooooo#", "#oo##oo#", "#oooooo#", ".#oooo#.", "..####.."]
+
+def paint(op, x0, y0, w, h, pat, pal):
+    ph, pw = len(pat), len(pat[0])
+    for j in range(h):
+        for i in range(w):
+            ch = pat[j * ph // h][i * pw // w]
+            op[x0 + i, y0 + j] = pal.get(ch, KEY)
+
+BASE = {'.': KEY, '#': (0, 0, 0), 'o': (255, 255, 255), 'Y': (204, 204, 102)}
+
 rects = collections.defaultdict(list)
 for l in open(RECTS):
     p = l.split()
     if p and p[0] == 'RECT':
         s, x, y, w, h = map(int, p[1:]); rects[s].append((x, y, w, h))
 
-def lum(c): return (c[0] * 3 + c[1] * 6 + c[2]) / 10
-
-def reduce_block(px):
-    op = [c for c in px if c != KEY]
-    if not op: return None
-    dark = [c for c in op if lum(c) < 70]
-    if dark: return min(dark, key=lum)
-    if len(op) * 2 < len(px): return None
-    return collections.Counter(op).most_common(1)[0][0]
-
 for sid, nm in enumerate(names):
     im = Image.open('%s/%s.PNG' % (SRC, nm)).convert('RGB')
     W, H = im.size; pix = im.load()
-    hw, hh = (W + 1) // 2, (H + 1) // 2
-    out = Image.new('RGB', (hw, hh), KEY); op = out.load()
     rs = rects.get(sid)
     if not rs:
-        # whole image (title logo): plain box filter, no transparency
-        out = im.resize((hw, hh), Image.LANCZOS)
-    else:
-        need_w = max([ (x + w + 1) // 2 for (x, y, w, h) in rs] + [hw])
-        need_h = max([ (y + h + 1) // 2 for (x, y, w, h) in rs] + [hh])
-        if (need_w, need_h) != (hw, hh):
-            out = Image.new('RGB', (need_w, need_h), KEY); op = out.load()
-        for (x, y, w, h) in rs:
-            x0, y0 = x // 2, y // 2
-            x1, y1 = (x + w + 1) // 2, (y + h + 1) // 2
-            d = reduce_rect(lambda a, b: pix[a, b],
-                            lambda a, b, x=x, y=y, w=w, h=h: x <= a < x + w and y <= b < y + h and a < W and b < H,
-                            x0, y0, x1, y1)
-            for k, c in d.items(): op[k] = c if c else KEY
-        if nm == 'player':
-            for fx in (0, 31, 62, 93, 124):
-                hx = fx // 2
-                for ry, row in enumerate(CAT_HEAD):
+        # whole image (the title logo): smooth resize, no transparency
+        out = im.resize((cl(W), cl(H)), Image.LANCZOS)
+        out.quantize(colors=128, dither=Image.NONE).save('%s/%s.png' % (OUT, nm), optimize=True)
+        continue
+    need_w = max([cl(x + w) for (x, y, w, h) in rs] + [cl(W)])
+    need_h = max([cl(y + h) for (x, y, w, h) in rs] + [cl(H)])
+    out = Image.new('RGB', (need_w, need_h), KEY); op = out.load()
+    for (x, y, w, h) in rs:
+        d = reduce_rect(lambda a, b: pix[a, b],
+                        lambda a, b, x=x, y=y, w=w, h=h: x <= a < x + w and y <= b < y + h and a < W and b < H,
+                        fl(x), fl(y), cl(x + w), cl(y + h), K)
+        for k, c in d.items(): op[k] = c if c else KEY
+
+    if nm == 'player':
+        for fx in (0, 31, 62, 93, 124):
+            if K == 4:
+                paint(op, fl(fx), 0, cl(fx + 30) - fl(fx), cl(36), CAT4[fx], BASE)
+            elif K in CAT_HEAD:
+                for ry, row in enumerate(CAT_HEAD[K]):
                     for rx, ch in enumerate(row):
-                        op[hx + rx, ry] = {'.': KEY, '#': (0, 0, 0), 'o': (255, 255, 255)}[ch]
-    q = out.quantize(colors=255, method=Image.MEDIANCUT, dither=Image.NONE) if rs else out.quantize(colors=128, dither=Image.NONE)
-    if rs:
-        # mark the key colour transparent
-        pal = q.getpalette()
-        idx = None
-        for i in range(len(pal) // 3):
-            if tuple(pal[i*3:i*3+3]) == KEY: idx = i; break
-        if idx is not None:
-            q.save('%s/%s.png' % (OUT, nm), optimize=True, transparency=idx)
-            continue
-    q.save('%s/%s.png' % (OUT, nm), optimize=True)
-    print(nm)
+                        op[fl(fx) + rx, ry] = BASE[ch]
+    if nm == 'brock' and K == 4:
+        for r in range(3):
+            main = pix[33 * 3 + 15, 33 * r + 15]
+            pal = dict(BASE); pal['M'] = main
+            for t, pat in TILE4.items():
+                x, y = 33 * t, 33 * r
+                paint(op, fl(x), fl(y), cl(x + 30) - fl(x), cl(y + 30) - fl(y), pat, pal)
+    if nm == 'teki' and K == 4:
+        paint(op, 0, 0, cl(30), cl(30), BLOB4, BASE)
+
+    q = out.quantize(colors=255, method=Image.MEDIANCUT, dither=Image.NONE)
+    pal = q.getpalette(); idx = None
+    for i in range(len(pal) // 3):
+        if tuple(pal[i * 3:i * 3 + 3]) == KEY: idx = i; break
+    if idx is not None:
+        q.save('%s/%s.png' % (OUT, nm), optimize=True, transparency=idx)
+    else:
+        q.save('%s/%s.png' % (OUT, nm), optimize=True)

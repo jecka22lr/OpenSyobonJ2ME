@@ -17,9 +17,9 @@ rep('''	DrawFormatString(230, 200, GetColor(255, 255, 255), " × %d",
 rep('''	str("TODO: Fix this encoding error...",240-6*20/2,xx[14]/100);\n''', '')
 # title screen: phone keys
 rep('''	str("Enterキーを押せ!!", 240 - 8 * 20 / 2, 250);''',
-    '''	str("5キーを押せ!!", 240 - 7 * 20 / 2, 250);
-	str(titleStageName(), 240 - 8 * 20 / 2, 282);
-	str("←→ ステージ選択", 240 - 8 * 20 / 2, 314);''')
+    '''	str("5キーを押せ!!", 240 - 7 * 20 / 2, titleY(0));
+	str(titleStageName(), 240 - 8 * 20 / 2, titleY(1));
+	str("←→ ステージ選択", 240 - 8 * 20 / 2, titleY(2));''')
 rep('''	if (key(KEY_INPUT_RETURN)) {
 	    xx[0] = 1;
 	}''', '''	titleSelect();
@@ -56,6 +56,15 @@ rep('''    if (tmsgtype == 2) {
 rep('''    if (tmsgtype == 3) {
 	xx[5] =''', '''    if (tmsgtype == 3 && !holdMsg) {
 	xx[5] =''')
+# route the message box through Rt.msgRect/msgFlush (layout per screen size)
+s = re.sub(r'fillrect\(4, ([^,]+), 472, ', r'msgRect(true, \1, ', s)
+s = re.sub(r'drawrect\(4, ([^,]+), 472, ', r'msgRect(false, \1, ', s)
+i = s.index('static void ttmsg()'); i = s.index('{', i) + 1; depth = 1
+while depth:
+    if s[i] == '{': depth += 1
+    elif s[i] == '}': depth -= 1
+    i += 1
+s = s[:i - 1] + '    msgFlush();\n' + s[i - 1:]
 extra = '''
 static int titleNewBits;
 static int titleSel;

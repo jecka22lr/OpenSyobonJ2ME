@@ -1,21 +1,21 @@
 # Pre-render every character used in the game's strings with Sazanami Gothic's
-# 12px embedded bitmaps and store them as horizontal runs (see Font.java).
+# embedded bitmaps (12px, or 10px for the small-screen builds) and store them as horizontal runs (see Font.java).
 import sys, re, struct, glob
 from PIL import Image, ImageDraw, ImageFont
-ttf, out = sys.argv[1], sys.argv[2]
+ttf, out, size = sys.argv[1], sys.argv[2], int(sys.argv[3])
 chars = set(chr(c) for c in range(0x20, 0x7f))
-for f in sys.argv[3:]:
+for f in sys.argv[4:]:
     src = open(f, encoding='utf-8').read()
     for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', src):
         chars.update(lit)
 chars.discard('\\')
 chars.add('\\')
-font = ImageFont.truetype(ttf, 12)
+font = ImageFont.truetype(ttf, size)
 chars = sorted(c for c in chars if c not in (' ', '　'))
 widths = []; starts = [0]; spans = bytearray()
 for c in chars:
     w = int(round(font.getlength(c)))
-    if w <= 0: w = 6
+    if w <= 0: w = size // 2
     widths.append(w)
     im = Image.new('1', (16, 16), 0); d = ImageDraw.Draw(im); d.fontmode = '1'
     d.text((0, 0), c, font=font, fill=1)
@@ -30,7 +30,7 @@ for c in chars:
             else:
                 x += 1
     starts.append(starts[-1] + n)
-data = struct.pack('>H', len(chars))
+data = struct.pack('>BH', size, len(chars))
 data += b''.join(struct.pack('>H', ord(c)) for c in chars)
 data += bytes(widths)
 data += b''.join(struct.pack('>i', s) for s in starts)

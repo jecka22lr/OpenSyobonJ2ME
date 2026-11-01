@@ -2,6 +2,7 @@
 # Headless smoke test: boots the jar in FreeJ2ME, starts 1-1, walks right,
 # saves screenshots to build/smoke/ and fails on any game exception.
 set -e
+unset JAVA_TOOL_OPTIONS
 cd "$(dirname "$0")/.."
 JAR=${1:-build/OpenSyobonJ2ME.jar}
 FJ=deps/freej2me/build/classes

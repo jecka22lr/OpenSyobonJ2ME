@@ -13,7 +13,20 @@ import javax.microedition.lcdui.game.Sprite;
  * at half scale into a 240x210 view.
  */
 class Rt {
-    static final int VW = 240, VH = 210;
+    // reduction factor from the original 480x420 (2, 3 or 4), set per build in Cfg
+    static final int K = Cfg.K;
+    static final int VW = 480 / K, VH = 420 / K;
+    static final boolean SMALL = K > 2;
+
+    // original pixels -> view pixels, rounding down (also for negatives)
+    static int sc(int x) {
+        return x >= 0 ? x / K : -((-x + K - 1) / K);
+    }
+
+    // rounding up
+    static int scu(int x) {
+        return -sc(-x);
+    }
 
     // ---- key ids used by the converted game code ----
     static final int KEY_INPUT_ESCAPE = 1, KEY_INPUT_LEFT = 2, KEY_INPUT_RIGHT = 3,
@@ -84,20 +97,20 @@ class Rt {
     static void drawpixel(int a, int b) {
         if (skipDraw) return;
         g.setColor(color);
-        g.fillRect(a >> 1, b >> 1, 1, 1);
+        g.fillRect(sc(a), sc(b), 1, 1);
     }
 
     static void drawline(int a, int b, int c, int d) {
         if (skipDraw) return;
         g.setColor(color);
-        g.drawLine(a >> 1, b >> 1, c >> 1, d >> 1);
+        g.drawLine(sc(a), sc(b), sc(c), sc(d));
     }
 
     static void drawrect(int a, int b, int c, int d) {
         if (skipDraw) return;
         g.setColor(color);
-        int x0 = a >> 1, y0 = b >> 1;
-        g.drawRect(x0, y0, ((a + c - 1) >> 1) - x0, ((b + d - 1) >> 1) - y0);
+        int x0 = sc(a), y0 = sc(b);
+        g.drawRect(x0, y0, sc(a + c - 1) - x0, sc(b + d - 1) - y0);
     }
 
     static void fillrect(int a, int b, int c, int d) {
@@ -105,20 +118,22 @@ class Rt {
         if (c > 4000) c = 4000; // fill-the-screen calls pass 48000
         if (d > 4000) d = 4000;
         g.setColor(color);
-        int x0 = a >> 1, y0 = b >> 1;
-        g.fillRect(x0, y0, ((a + c) >> 1) - x0, ((b + d) >> 1) - y0);
+        int x0 = sc(a), y0 = sc(b);
+        g.fillRect(x0, y0, sc(a + c) - x0, sc(b + d) - y0);
     }
 
     static void drawarc(int a, int b, int c, int d) {
         if (skipDraw) return;
         g.setColor(color);
-        g.drawArc((a - c) >> 1, (b - d) >> 1, c, d, 0, 360);
+        int x0 = sc(a - c), y0 = sc(b - d);
+        g.drawArc(x0, y0, sc(a + c) - x0, sc(b + d) - y0, 0, 360);
     }
 
     static void fillarc(int a, int b, int c, int d) {
         if (skipDraw) return;
         g.setColor(color);
-        g.fillArc((a - c) >> 1, (b - d) >> 1, c + 1, d + 1, 0, 360);
+        int x0 = sc(a - c), y0 = sc(b - d);
+        g.fillArc(x0, y0, sc(a + c) - x0 + 1, sc(b + d) - y0 + 1, 0, 360);
     }
 
     // ---- images ----
@@ -153,10 +168,10 @@ class Rt {
         im.sheet = src.sheet;
         im.w = w;
         im.h = h;
-        im.hx = x >> 1;
-        im.hy = y >> 1;
-        im.hw = ((x + w + 1) >> 1) - im.hx;
-        im.hh = ((y + h + 1) >> 1) - im.hy;
+        im.hx = sc(x);
+        im.hy = sc(y);
+        im.hw = scu(x + w) - im.hx;
+        im.hh = scu(y + h) - im.hy;
         if (recordOnly) {
             StringBuffer sb = new StringBuffer("RECT ");
             sb.append(im.sheet).append(' ').append(x).append(' ').append(y).append(' ').append(w).append(' ').append(h);
@@ -169,14 +184,14 @@ class Rt {
         if (skipDraw || m == null) return;
         g.drawRegion(sheets[m.sheet], m.hx, m.hy, m.hw, m.hh,
                 mirror == 1 ? Sprite.TRANS_MIRROR : Sprite.TRANS_NONE,
-                a >> 1, b >> 1, Graphics.TOP | Graphics.LEFT);
+                sc(a), sc(b), Graphics.TOP | Graphics.LEFT);
     }
 
     // upside-down draw centred on (a,b)
     static void DrawVertTurnGraph(int a, int b, Img m) {
         if (skipDraw || m == null) return;
         g.drawRegion(sheets[m.sheet], m.hx, m.hy, m.hw, m.hh, Sprite.TRANS_MIRROR_ROT180,
-                (a >> 1) - (m.hw >> 1), (b >> 1) - (m.hh >> 1), Graphics.TOP | Graphics.LEFT);
+                sc(a) - (m.hw >> 1), sc(b) - (m.hh >> 1), Graphics.TOP | Graphics.LEFT);
     }
 
     // ---- text ----
@@ -201,16 +216,22 @@ class Rt {
         // 480px screen; recognise that and re-centre for our font.
         int ow = 0;
         for (int i = 0; i < s.length(); i++) ow += s.charAt(i) < 0x100 || (s.charAt(i) >= 0xFF61 && s.charAt(i) <= 0xFF9F) ? 10 : 20;
-        int x = a >> 1;
+        int x = sc(a);
         int cx = a + ow / 2 - 240;
         if (!noCentre && cx > -24 && cx < 24 && ow > 40) x = (VW - Font.width(s)) >> 1;
-        int y = b >> 1;
+        int y = sc(b);
         if (fontType == DX_FONTTYPE_EDGE) {
             for (int dy = -1; dy <= 1; dy++)
                 for (int dx = -1; dx <= 1; dx++)
                     if (dx != 0 || dy != 0) Font.draw(g, s, x + dx, y + dy, 0);
         }
         Font.draw(g, s, x, y, color);
+    }
+
+    // title screen text rows, in original coordinates, spaced for our font
+    static int titleY(int i) {
+        if (!SMALL) return 250 + i * 32;
+        return (VH / 2 - 3 + i * (Font.height() + 1)) * K;
     }
 
     static void DrawString(int a, int b, String s, int c) {
@@ -220,10 +241,63 @@ class Rt {
         color = old;
     }
 
-    static void txmsg(String x, int a) {
-        // message box text; box widened to the full view, see ttmsg patch
+    // ---- hint-block message box ----
+    // The box is drawn relative to the view rather than through the game's
+    // scale, so its text stays readable on every build.
+    static void msgRect(boolean fill, int y, int h) {
         if (skipDraw) return;
-        Font.draw(g, x, 7, 22 + a * 12, color);
+        if (!SMALL) { // 240 wide: the full-width box from the first build
+            if (fill) fillrect(4, y, 472, h); else drawrect(4, y, 472, h);
+            return;
+        }
+        int full = VH - 4;                       // box height when fully open
+        int y0 = 2 + (y - 40) * full / 183;
+        int hh = h * full / 183;
+        g.setColor(color);
+        if (fill) g.fillRect(1, y0, VW - 2, hh);
+        else g.drawRect(1, y0, VW - 3, hh - 1);
+    }
+
+    private static final String[] msgLines = new String[12];
+    private static final int[] msgRows = new int[12];
+    private static int msgN;
+
+    static void txmsg(String x, int a) {
+        if (skipDraw) return;
+        if (!SMALL) {
+            Font.draw(g, x, 7, 22 + a * 12, color);
+            return;
+        }
+        if (msgN < msgLines.length) { msgLines[msgN] = x; msgRows[msgN] = a; msgN++; }
+    }
+
+    // Small screens: drop the space padding, wrap long lines, and keep the
+    // right-aligned signatures ("ちく より") on the right.
+    static void msgFlush() {
+        if (!SMALL || skipDraw) { msgN = 0; return; }
+        int lh = Font.height() + 1;
+        int maxW = VW - 8;
+        int y = 4;
+        for (int i = 0; i < msgN; i++) {
+            String s = msgLines[i];
+            int lead = 0;
+            while (lead < s.length() && (s.charAt(lead) == ' ' || s.charAt(lead) == '\u3000')) lead++;
+            int end = s.length();
+            while (end > lead && (s.charAt(end - 1) == ' ' || s.charAt(end - 1) == '\u3000')) end--;
+            if (end <= lead) continue;
+            s = s.substring(lead, end);
+            boolean right = lead >= 12;
+            while (s.length() > 0) {
+                int n = s.length();
+                while (n > 1 && Font.width(s.substring(0, n)) > maxW) n--;
+                String part = s.substring(0, n);
+                int x = right ? VW - 4 - Font.width(part) : 4;
+                Font.draw(g, part, x, y, color);
+                y += lh;
+                s = s.substring(n);
+            }
+        }
+        msgN = 0;
     }
 
     // ---- sound ----

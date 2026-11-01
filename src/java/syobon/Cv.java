@@ -297,7 +297,9 @@ final class Cv extends GameCanvas implements Runnable {
     }
 
     // ---------------- menu ----------------
-    private static final String[] ORIENT_NAMES = { "Auto", "Portrait", "Landscape (keys right)", "Landscape (keys left)" };
+    private static final String[] ORIENT_NAMES = Rt.SMALL
+            ? new String[] { "Auto", "Portrait", "Land. keys R", "Land. keys L" }
+            : new String[] { "Auto", "Portrait", "Landscape (keys right)", "Landscape (keys left)" };
 
     private int menuCount() { return 6; }
 
@@ -322,9 +324,10 @@ final class Cv extends GameCanvas implements Runnable {
             case 1: return cat("Screen: ", ORIENT_NAMES[orient]);
             case 2: return cat("Sound: ", Snd.enabled ? "On" : "Off");
             case 3:
-                if (Snd.mixing) return "Mixing: supported";
+                if (Snd.mixing) return Rt.SMALL ? "Mixing: yes" : "Mixing: supported";
+                if (Rt.SMALL) return cat("Prefer: ", Snd.noMixMode == 0 ? "music" : "effects");
                 return cat("No mixing: ", Snd.noMixMode == 0 ? "music first" : "effects first");
-            case 4: return "Back to title";
+            case 4: return Rt.SMALL ? "Title" : "Back to title";
             case 5: return "Exit";
         }
         return "";
@@ -365,21 +368,24 @@ final class Cv extends GameCanvas implements Runnable {
 
     private void drawMenu(Graphics g) {
         int n = menuCount();
-        int h = n * 14 + 22;
+        int rh = Font.height() + 2;
+        int m = Rt.SMALL ? 2 : 8;
+        int h = n * rh + rh + 8;
         int y0 = (Rt.VH - h) >> 1;
+        if (y0 < 0) y0 = 0;
         g.setClip(0, 0, Rt.VW, Rt.VH);
         g.setColor(0);
-        g.fillRect(8, y0, Rt.VW - 16, h);
+        g.fillRect(m, y0, Rt.VW - 2 * m, h);
         g.setColor(0xFFFFFF);
-        g.drawRect(8, y0, Rt.VW - 17, h - 1);
-        Font.draw(g, "PAUSE", (Rt.VW - Font.width("PAUSE")) >> 1, y0 + 4, 0xFFFF80);
+        g.drawRect(m, y0, Rt.VW - 2 * m - 1, h - 1);
+        Font.draw(g, "PAUSE", (Rt.VW - Font.width("PAUSE")) >> 1, y0 + 3, 0xFFFF80);
         for (int i = 0; i < n; i++) {
-            int y = y0 + 20 + i * 14;
+            int y = y0 + rh + 6 + i * rh;
             if (i == menuSel) {
                 g.setColor(0x4060C0);
-                g.fillRect(12, y - 1, Rt.VW - 24, 14);
+                g.fillRect(m + 2, y - 1, Rt.VW - 2 * m - 4, rh);
             }
-            Font.draw(g, menuLine(i), 16, y, 0xFFFFFF);
+            Font.draw(g, menuLine(i), m + 6, y, 0xFFFFFF);
         }
     }
 

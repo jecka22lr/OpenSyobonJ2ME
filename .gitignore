@@ -5,3 +5,4 @@ res/
 src/java/syobon/G.java
 dist/
 __pycache__/
+src/java/syobon/Cfg.java
